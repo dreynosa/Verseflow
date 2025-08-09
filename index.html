@@ -2,62 +2,71 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>VerseFlow — Minimal Bible Memory</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  :root { color-scheme: light; }
-  .card{border-radius:1rem; background:#fff; box-shadow: 0 1px 0 rgba(0,0,0,.02), inset 0 0 0 1px rgba(0,0,0,.06);}
-  .pill{border-radius:999px; border:1px solid #e5e5e5; padding:.25rem .6rem; font-size:.75rem;}
-  .bar{height:8px; border-radius:999px; background:#eee; overflow:hidden}
-  .bar>div{height:100%; background:#000}
-  .blur{filter:blur(6px); user-select:none}
-  textarea,input{outline:none}
+  :root{ color-scheme: light dark; --bg: #ffffff; --card:#ffffff; --ink:#111; --muted:#6b7280; --ring:rgba(0,0,0,.06); }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0a0a0a; --card:#111; --ink:#f5f5f5; --muted:#a3a3a3; --ring:rgba(255,255,255,.08);}
+  }
+  html,body{ background:var(--bg); color:var(--ink); }
+  .card{ border-radius:1rem; background:var(--card); box-shadow: 0 1px 0 var(--ring), inset 0 0 0 1px var(--ring); }
+  .pill{ border-radius:999px; border:1px solid var(--ring); padding:.25rem .6rem; font-size:.75rem;}
+  .bar{ height:8px; border-radius:999px; background:rgba(127,127,127,.15); overflow:hidden}
+  .bar>div{ height:100%; background:#000}
+  @media (prefers-color-scheme: dark){ .bar>div{ background:#fff } }
+  .blur{ filter:blur(6px); user-select:none }
+  .safe-pad{ padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .verse{ font-size: clamp(18px, 2.6vw, 24px); line-height: 1.6; }
+  .verse-hint{ font-size: clamp(16px, 2.2vw, 20px); }
+  .tap { min-height: 44px; min-width: 44px; }
+  textarea,input{ outline: none; }
 </style>
 </head>
-<body class="bg-white text-neutral-900 antialiased">
-<div class="mx-auto max-w-6xl p-6">
+<body class="antialiased">
+<div class="mx-auto max-w-6xl p-4 sm:p-6 pb-28"> <!-- extra bottom space for sticky bar -->
   <!-- Header -->
-  <header class="flex items-center justify-between gap-4">
+  <header class="flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
-      <div class="h-8 w-8 rounded-2xl bg-black"></div>
-      <h1 class="text-2xl font-semibold tracking-tight">VerseFlow</h1>
-      <span class="pill">beta</span>
+      <div class="h-8 w-8 rounded-2xl bg-black dark:bg-white"></div>
+      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">VerseFlow</h1>
+      <span class="pill hidden sm:inline">beta</span>
     </div>
-    <div class="flex items-center gap-4 text-sm">
+    <div class="hidden sm:flex items-center gap-4 text-sm">
       <span id="lvlBadge" class="pill">Lvl 1</span>
       <div class="w-40">
         <div class="bar"><div id="lvlBar" style="width:0%"></div></div>
-        <p id="lvlHint" class="mt-1 text-[11px] text-neutral-500">0/100 XP to next level</p>
+        <p id="lvlHint" class="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">0/100 XP to next level</p>
       </div>
       <span class="pill"><span id="streak">0</span> day streak</span>
     </div>
   </header>
 
-  <main class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <main class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
     <!-- Left -->
     <section class="space-y-4 lg:col-span-1">
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <h2 class="text-base font-medium mb-3">Categories</h2>
-        <div id="packs" class="flex flex-wrap gap-2 mb-4"></div>
-        <div class="h-px bg-neutral-200 my-3"></div>
-        <div class="text-xs text-neutral-500 mb-2">Quick-add a recommended pack</div>
+        <div id="packs" class="flex flex-wrap gap-2 mb-2"></div>
+        <div class="h-px bg-neutral-200/60 dark:bg-white/10 my-3"></div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Quick-add a recommended pack</div>
         <div id="seeds" class="flex flex-wrap gap-2"></div>
       </div>
 
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <h2 class="text-base font-medium mb-4">Add Your Own Verse</h2>
         <label class="text-sm">Reference</label>
-        <input id="refIn" class="w-full mt-1 mb-3 border rounded-xl px-3 py-2" placeholder="e.g., Psalm 23:1 (ESV)">
+        <input id="refIn" class="w-full mt-1 mb-3 border rounded-xl px-3 py-2 bg-transparent" placeholder="e.g., Psalm 23:1 (ESV)">
         <label class="text-sm">Verse Text</label>
-        <textarea id="textIn" rows="4" class="w-full mt-1 mb-3 border rounded-xl px-3 py-2" placeholder="Paste the verse text here"></textarea>
-        <div class="flex items-center justify-between">
-          <div class="text-xs text-neutral-500">Tip: Any translation works.</div>
-          <button id="addBtn" class="rounded-xl bg-black text-white px-4 py-2">Add</button>
-        </div>
+        <textarea id="textIn" rows="4" class="w-full mt-1 mb-3 border rounded-xl px-3 py-2 bg-transparent" placeholder="Paste the verse text here"></textarea>
+        <button id="addBtn" class="tap w-full rounded-xl bg-black text-white px-4 py-3 text-sm sm:w-auto sm:ml-auto">Add</button>
       </div>
 
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <h2 class="text-base font-medium mb-3">Progress</h2>
         <div class="flex items-center justify-between text-sm mb-1">
           <span>Total verses</span><strong id="total">0</strong>
@@ -66,107 +75,97 @@
           <span>Memorized</span><strong id="memd">0</strong>
         </div>
         <div class="bar"><div id="overall" style="width:0%"></div></div>
-        <div id="overallHint" class="text-xs text-neutral-500 mt-2">0% complete</div>
+        <div id="overallHint" class="text-xs text-neutral-500 dark:text-neutral-400 mt-2">0% complete</div>
+
+        <!-- compact mobile stats -->
+        <div class="mt-3 flex sm:hidden items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+          <span id="lvlBadgeSm" class="pill">Lvl 1</span>
+          <span>XP: <b id="xpSm">0</b></span>
+          <span>Streak: <b id="streakSm">0</b></span>
+        </div>
       </div>
     </section>
 
     <!-- Right -->
     <section class="space-y-4 lg:col-span-2">
-      <div class="card p-5">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+      <div class="card p-4 sm:p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
           <div>
             <h2 class="text-lg font-medium">Trainer</h2>
-            <p class="text-sm text-neutral-500" id="meta"></p>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400" id="meta"></p>
           </div>
-          <div class="flex items-center gap-3">
-            <select id="mode" class="border rounded-xl px-3 py-2">
+          <div class="grid grid-cols-2 sm:flex items-center gap-3">
+            <select id="mode" class="border rounded-xl px-3 py-2 bg-transparent">
               <option value="flash">Flashcards</option>
               <option value="fill">Fill-in-the-blanks</option>
               <option value="letters">First-letter mode</option>
             </select>
-            <label class="text-xs text-neutral-600 flex items-center gap-2">
+            <label class="flex items-center justify-end gap-2 text-xs text-neutral-600 dark:text-neutral-300">
               <input id="showRef" type="checkbox" checked class="scale-110"> Show reference
             </label>
           </div>
         </div>
 
-        <div class="rounded-2xl bg-neutral-50 p-6">
-          <div id="refBlock" class="text-sm text-neutral-500 mb-3"></div>
+        <div class="rounded-2xl bg-neutral-50 dark:bg-white/5 p-4 sm:p-6">
+          <div id="refBlock" class="text-sm text-neutral-500 dark:text-neutral-400 mb-3"></div>
 
           <div id="flashArea" class="hidden text-center">
-            <p id="flashText" class="text-xl leading-8"></p>
+            <p id="flashText" class="verse"></p>
             <div class="mt-4">
-              <button id="flashToggle" class="rounded-xl bg-black text-white px-4 py-2">Reveal</button>
+              <button id="flashToggle" class="tap rounded-xl bg-black text-white px-4 py-3 text-sm">Reveal</button>
             </div>
           </div>
 
           <div id="fillArea" class="hidden">
-            <p id="fillMasked" class="text-lg leading-7 text-neutral-700 mb-3"></p>
+            <p id="fillMasked" class="verse-hint text-neutral-700 dark:text-neutral-200 mb-3"></p>
             <label class="text-sm">Your attempt</label>
-            <textarea id="fillInput" rows="4" class="w-full mt-1 border rounded-xl px-3 py-2" placeholder="Type the full verse from memory"></textarea>
-            <div id="fillHint" class="text-sm text-neutral-500 mt-1">Punctuation doesn’t matter.</div>
+            <textarea id="fillInput" rows="4" class="w-full mt-1 border rounded-xl px-3 py-3 bg-transparent" placeholder="Type the full verse from memory"></textarea>
+            <div id="fillHint" class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Punctuation doesn’t matter.</div>
           </div>
 
           <div id="lettersArea" class="hidden">
-            <p id="lettersHint" class="text-lg leading-7 tracking-wider text-neutral-700 mb-3"></p>
+            <p id="lettersHint" class="verse-hint tracking-wider text-neutral-700 dark:text-neutral-200 mb-3"></p>
             <label class="text-sm">Your attempt</label>
-            <textarea id="lettersInput" rows="4" class="w-full mt-1 border rounded-xl px-3 py-2" placeholder="Type the full verse from memory"></textarea>
-            <div id="lettersCheck" class="text-sm text-neutral-500 mt-1">Pro tip: try short phrases.</div>
+            <textarea id="lettersInput" rows="4" class="w-full mt-1 border rounded-xl px-3 py-3 bg-transparent" placeholder="Type the full verse from memory"></textarea>
+            <div id="lettersCheck" class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Pro tip: try short phrases.</div>
           </div>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3 text-sm text-neutral-500">
-            <span>XP: <strong id="xp">0</strong></span>
-            <span>•</span>
-            <span>Streak: <strong id="streakMeta">0</strong></span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="revealBtn" class="rounded-xl border px-4 py-2">Reveal</button>
-            <button id="prevBtn" class="rounded-xl border px-4 py-2">Prev</button>
-            <button id="nextBtn" class="rounded-xl bg-black text-white px-4 py-2">Next</button>
-          </div>
-        </div>
-
-        <div class="mt-4 flex items-center gap-2">
-          <button id="rightBtn" class="rounded-xl border px-4 py-2">I got it right</button>
-          <button id="againBtn" class="rounded-xl px-4 py-2">Keep practicing</button>
         </div>
       </div>
 
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <h2 class="text-base font-medium mb-3">Mini Leaderboard (just you)</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div class="border rounded-xl p-4">
-            <div class="text-[11px] uppercase tracking-wide text-neutral-500">Level</div>
-            <div id="statLevel" class="mt-1 text-lg font-medium">Level 1</div>
-          </div>
-          <div class="border rounded-xl p-4">
-            <div class="text-[11px] uppercase tracking-wide text-neutral-500">XP</div>
-            <div id="statXP" class="mt-1 text-lg font-medium">0</div>
-          </div>
-          <div class="border rounded-xl p-4">
-            <div class="text-[11px] uppercase tracking-wide text-neutral-500">Memorized</div>
-            <div id="statMem" class="mt-1 text-lg font-medium">0/0</div>
-          </div>
-          <div class="border rounded-xl p-4">
-            <div class="text-[11px] uppercase tracking-wide text-neutral-500">Best Streak</div>
-            <div id="statStreak" class="mt-1 text-lg font-medium">0</div>
-          </div>
+        <div class="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+          <div class="border rounded-xl p-4"><div class="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Level</div><div id="statLevel" class="mt-1 text-lg font-medium">Level 1</div></div>
+          <div class="border rounded-xl p-4"><div class="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">XP</div><div id="statXP" class="mt-1 text-lg font-medium">0</div></div>
+          <div class="border rounded-xl p-4"><div class="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Memorized</div><div id="statMem" class="mt-1 text-lg font-medium">0/0</div></div>
+          <div class="border rounded-xl p-4"><div class="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Best Streak</div><div id="statStreak" class="mt-1 text-lg font-medium">0</div></div>
         </div>
       </div>
     </section>
   </main>
+</div>
 
-  <footer class="mt-10 flex items-center justify-between border-t pt-6 text-xs text-neutral-500">
-    <p>Built for focus. Zero clutter. 100% yours.</p>
-    <p>Tip: In Chrome, use “Install this site as an app.”</p>
-  </footer>
+<!-- Sticky Bottom Action Bar (thumb-friendly) -->
+<div class="fixed inset-x-0 bottom-0 z-50 safe-pad">
+  <div class="mx-auto max-w-6xl">
+    <div class="m-3 rounded-2xl bg-black/95 text-white shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-black/70">
+      <div class="grid grid-cols-3 gap-2 p-3">
+        <button id="prevBtn"   class="tap rounded-xl bg-white/10 px-3 py-3 text-sm">Prev</button>
+        <button id="revealBtn" class="tap rounded-xl bg-white text-black px-3 py-3 text-sm">Reveal</button>
+        <button id="nextBtn"   class="tap rounded-xl bg-white/10 px-3 py-3 text-sm">Next</button>
+      </div>
+      <div class="px-4 pb-3 text-[11px] text-center text-white/70">
+        <span>XP: <b id="xp">0</b></span>
+        <span class="mx-2">•</span>
+        <span>Streak: <b id="streakMeta">0</b></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* ---------- Data ---------- */
-const LS = "verseflow_static_v1";
+/* --- same JS as before with small mobile tweaks --- */
+const LS = "verseflow_static_v2";
 const seedPacks = [
   { id:"evangelism-top10", name:"Top 10 Evangelism Verses", verses:[
     {ref:"John 3:16 (KJV)", text:"For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."},
@@ -198,160 +197,85 @@ const mask = (t,n=3)=>W(t).map((w,i)=>((i+1)%n===0?'_'.repeat(Math.min(4,w.lengt
 const first = t => W(t).map(w=>w[0]?.toUpperCase()||'').join(' ');
 const norm = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
 
-/* ---------- State ---------- */
-let state = {
-  packs: JSON.parse(JSON.stringify(seedPacks)),
-  activePackId: "evangelism-top10",
-  activeIdx: 0,
-  mode: "flash",
-  showRef: true,
-  reveal: false,
-  answer: "",
-  xp: 0,
-  streak: 0,
-  completed: {} // key: packId|idx
-};
-const saved = load(); if (saved) state = {...state, ...saved};
+let state = { packs: JSON.parse(JSON.stringify(seedPacks)), activePackId:"evangelism-top10", activeIdx:0, mode:"flash", showRef:true, reveal:false, answer:"", xp:0, streak:0, completed:{} };
+const saved = load(); if(saved) state = {...state, ...saved};
 
-/* ---------- DOM refs ---------- */
-const packsEl = document.getElementById('packs');
-const seedsEl = document.getElementById('seeds');
-const metaEl = document.getElementById('meta');
-const showRefEl = document.getElementById('showRef');
-const modeEl = document.getElementById('mode');
-const refBlock = document.getElementById('refBlock');
-const flashArea = document.getElementById('flashArea');
-const flashText = document.getElementById('flashText');
-const flashToggle = document.getElementById('flashToggle');
-const fillArea = document.getElementById('fillArea');
-const fillMasked = document.getElementById('fillMasked');
-const fillInput = document.getElementById('fillInput');
-const fillHint = document.getElementById('fillHint');
-const lettersArea = document.getElementById('lettersArea');
-const lettersHint = document.getElementById('lettersHint');
-const lettersInput = document.getElementById('lettersInput');
-const lettersCheck = document.getElementById('lettersCheck');
+/* refs */
+const packsEl=document.getElementById('packs'), seedsEl=document.getElementById('seeds'),
+metaEl=document.getElementById('meta'), showRefEl=document.getElementById('showRef'), modeEl=document.getElementById('mode'),
+refBlock=document.getElementById('refBlock'),
+flashArea=document.getElementById('flashArea'), flashText=document.getElementById('flashText'), flashToggle=document.getElementById('flashToggle'),
+fillArea=document.getElementById('fillArea'), fillMasked=document.getElementById('fillMasked'), fillInput=document.getElementById('fillInput'), fillHint=document.getElementById('fillHint'),
+lettersArea=document.getElementById('lettersArea'), lettersHint=document.getElementById('lettersHint'), lettersInput=document.getElementById('lettersInput'), lettersCheck=document.getElementById('lettersCheck'),
+prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), revealBtn=document.getElementById('revealBtn'),
+rightBtn=document.getElementById('rightBtn'), againBtn=document.getElementById('againBtn'),
+refIn=document.getElementById('refIn'), textIn=document.getElementById('textIn'), totalEl=document.getElementById('total'), memdEl=document.getElementById('memd'),
+overall=document.getElementById('overall'), overallHint=document.getElementById('overallHint'),
+lvlBadge=document.getElementById('lvlBadge'), lvlBar=document.getElementById('lvlBar'), lvlHint=document.getElementById('lvlHint'),
+streakEl=document.getElementById('streak'), xpEl=document.getElementById('xp'), streakMeta=document.getElementById('streakMeta'),
+lvlBadgeSm=document.getElementById('lvlBadgeSm'), xpSm=document.getElementById('xpSm'), streakSm=document.getElementById('streakSm'),
+statLevel=document.getElementById('statLevel'), statXP=document.getElementById('statXP'), statMem=document.getElementById('statMem'), statStreak=document.getElementById('statStreak');
 
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const revealBtn = document.getElementById('revealBtn');
-const rightBtn = document.getElementById('rightBtn');
-const againBtn = document.getElementById('againBtn');
-
-const refIn = document.getElementById('refIn');
-const textIn = document.getElementById('textIn');
-const addBtn = document.getElementById('addBtn');
-
-const totalEl = document.getElementById('total');
-const memdEl = document.getElementById('memd');
-const overall = document.getElementById('overall');
-const overallHint = document.getElementById('overallHint');
-
-const lvlBadge = document.getElementById('lvlBadge');
-const lvlBar = document.getElementById('lvlBar');
-const lvlHint = document.getElementById('lvlHint');
-const xpEl = document.getElementById('xp');
-const streakEl = document.getElementById('streak');
-const streakMeta = document.getElementById('streakMeta');
-const statLevel = document.getElementById('statLevel');
-const statXP = document.getElementById('statXP');
-const statMem = document.getElementById('statMem');
-const statStreak = document.getElementById('statStreak');
-
-/* ---------- Render ---------- */
 function activePack(){ return state.packs.find(p=>p.id===state.activePackId) || state.packs[0]; }
 function item(){ return activePack().verses[state.activeIdx] || {ref:"",text:""}; }
 
 function renderPacks(){
-  packsEl.innerHTML = "";
-  state.packs.forEach(p=>{
-    const b = document.createElement('button');
-    b.className = `rounded-full border px-3 py-1 text-sm ${p.id===state.activePackId?'bg-black text-white':'bg-white'}`;
-    b.textContent = p.name;
-    b.onclick = ()=>{ state.activePackId=p.id; state.activeIdx=0; state.reveal=false; save(state); renderAll(); };
+  packsEl.innerHTML=""; state.packs.forEach(p=>{
+    const b=document.createElement('button');
+    b.className=`tap rounded-full border px-3 py-2 text-sm ${p.id===state.activePackId?'bg-black text-white':'bg-transparent'}`;
+    b.textContent=p.name; b.onclick=()=>{state.activePackId=p.id; state.activeIdx=0; state.reveal=false; save(state); renderAll()};
     packsEl.appendChild(b);
   });
-  seedsEl.innerHTML = "";
-  seedPacks.forEach(sp=>{
-    const b = document.createElement('button');
-    b.className = "rounded-full border bg-neutral-50 px-3 py-1 text-sm";
-    b.textContent = `+ ${sp.name}`;
-    b.onclick = ()=>{
-      if (!state.packs.some(p=>p.id===sp.id)) state.packs=[sp, ...state.packs];
-      state.activePackId=sp.id; state.activeIdx=0; save(state); renderAll();
-    };
+  seedsEl.innerHTML=""; seedPacks.forEach(sp=>{
+    const b=document.createElement('button'); b.className="tap rounded-full border bg-neutral-50 dark:bg-white/10 px-3 py-2 text-sm";
+    b.textContent=`+ ${sp.name}`; b.onclick=()=>{ if(!state.packs.some(p=>p.id===sp.id)) state.packs=[sp,...state.packs]; state.activePackId=sp.id; state.activeIdx=0; save(state); renderAll(); };
     seedsEl.appendChild(b);
   });
 }
 
 function renderTrainer(){
-  const p = activePack();
-  const it = item();
-  metaEl.textContent = `${p.name} — ${p.verses.length? (state.activeIdx+1) : 0}/${p.verses.length||0}`;
-
-  refBlock.textContent = state.showRef ? it.ref : "";
+  const p=activePack(), it=item();
+  metaEl.textContent=`${p.name} — ${p.verses.length?(state.activeIdx+1):0}/${p.verses.length||0}`;
+  refBlock.textContent=state.showRef?it.ref:"";
   flashArea.classList.add('hidden'); fillArea.classList.add('hidden'); lettersArea.classList.add('hidden');
-
-  if (state.mode === "flash") {
-    flashArea.classList.remove('hidden');
-    flashText.textContent = it.text || "";
-    flashText.className = `text-xl leading-8 ${state.reveal?'':'blur'}`;
-  } else if (state.mode === "fill") {
-    fillArea.classList.remove('hidden');
-    fillMasked.textContent = mask(it.text||"", 3);
-  } else {
-    lettersArea.classList.remove('hidden');
-    lettersHint.textContent = first(it.text||"");
-  }
+  if(state.mode==="flash"){ flashArea.classList.remove('hidden'); flashText.textContent=it.text||""; flashText.className=`verse ${state.reveal?'':'blur'}`; }
+  else if(state.mode==="fill"){ fillArea.classList.remove('hidden'); fillMasked.textContent=mask(it.text||"",3); }
+  else { lettersArea.classList.remove('hidden'); lettersHint.textContent=first(it.text||""); }
 }
 
 function renderProgress(){
-  const total = state.packs.reduce((s,p)=>s+p.verses.length,0);
-  const memd = Object.values(state.completed).filter(Boolean).length;
-  totalEl.textContent = total; memdEl.textContent = memd;
-  const pct = total? (memd/total)*100 : 0; overall.style.width = pct+"%";
-  overallHint.textContent = `${Math.round(pct)}% complete`;
-
-  const level = Math.floor(state.xp/100)+1; const pctL = state.xp%100;
-  lvlBadge.textContent = `Lvl ${level}`; lvlBar.style.width = pctL+"%";
-  lvlHint.textContent = `${pctL}/100 XP to next level`;
-  xpEl.textContent = state.xp;
-  streakEl.textContent = state.streak;
-  streakMeta.textContent = state.streak;
-  statLevel.textContent = `Level ${level}`;
-  statXP.textContent = state.xp;
-  statMem.textContent = `${memd}/${total}`;
-  statStreak.textContent = Math.max(state.streak, memd);
+  const total=state.packs.reduce((s,p)=>s+p.verses.length,0);
+  const memd=Object.values(state.completed).filter(Boolean).length;
+  totalEl.textContent=total; memdEl.textContent=memd;
+  const pct=total?(memd/total)*100:0; overall.style.width=pct+"%"; overallHint.textContent=`${Math.round(pct)}% complete`;
+  const level=Math.floor(state.xp/100)+1; const pctL=state.xp%100;
+  lvlBadge.textContent=`Lvl ${level}`; lvlBar.style.width=pctL+"%"; lvlHint.textContent=`${pctL}/100 XP to next level`;
+  xpEl.textContent=state.xp; streakMeta.textContent=state.streak; streakEl.textContent=state.streak;
+  lvlBadgeSm.textContent=`Lvl ${level}`; xpSm.textContent=state.xp; streakSm.textContent=state.streak;
+  statLevel.textContent=`Level ${level}`; statXP.textContent=state.xp; statMem.textContent=`${memd}/${total}`; statStreak.textContent=Math.max(state.streak, memd);
 }
 
 function renderAll(){ renderPacks(); renderTrainer(); renderProgress(); }
 renderAll();
 
-/* ---------- Events ---------- */
-showRefEl.onchange = e => { state.showRef = e.target.checked; save(state); renderTrainer(); };
-modeEl.onchange = e => { state.mode = e.target.value; state.reveal=false; state.answer=""; save(state); renderTrainer(); };
+/* events */
+showRefEl.onchange=e=>{state.showRef=e.target.checked; save(state); renderTrainer()};
+modeEl.onchange=e=>{state.mode=e.target.value; state.reveal=false; state.answer=""; save(state); renderTrainer()};
+flashToggle.onclick=()=>{state.reveal=!state.reveal; save(state); renderTrainer()};
+revealBtn.onclick=()=>{state.reveal=!state.reveal; save(state); renderTrainer()};
+prevBtn.onclick=()=>{const len=activePack().verses.length||1; state.activeIdx=(state.activeIdx-1+len)%len; state.reveal=false; state.answer=""; save(state); renderTrainer()};
+nextBtn.onclick=()=>{const len=activePack().verses.length||1; state.activeIdx=(state.activeIdx+1)%len; state.reveal=false; state.answer=""; save(state); renderTrainer()};
+rightBtn.onclick=()=>{state.xp+=10; state.streak+=1; state.completed[`${state.activePackId}|${state.activeIdx}`]=true; state.reveal=true; save(state); renderProgress()};
+againBtn.onclick=()=>{state.streak=0; state.xp=Math.max(0,state.xp-2); state.reveal=true; save(state); renderProgress()};
 
-flashToggle.onclick = ()=>{ state.reveal = !state.reveal; save(state); renderTrainer(); };
-revealBtn.onclick = ()=>{ state.reveal = !state.reveal; save(state); renderTrainer(); };
-prevBtn.onclick = ()=>{ const len = activePack().verses.length||1; state.activeIdx = (state.activeIdx-1+len)%len; state.reveal=false; state.answer=""; save(state); renderTrainer(); };
-nextBtn.onclick = ()=>{ const len = activePack().verses.length||1; state.activeIdx = (state.activeIdx+1)%len; state.reveal=false; state.answer=""; save(state); renderTrainer(); };
-
-rightBtn.onclick = ()=>{ state.xp += 10; state.streak += 1; state.completed[`${state.activePackId}|${state.activeIdx}`]=true; state.reveal=true; save(state); renderProgress(); };
-againBtn.onclick = ()=>{ state.streak = 0; state.xp = Math.max(0, state.xp-2); state.reveal=true; save(state); renderProgress(); };
-
-fillInput.oninput = ()=>{ const ok = norm(fillInput.value)===norm(item().text||""); fillHint.textContent = ok? "Perfect match!" : "Punctuation doesn’t matter."; fillHint.className = "text-sm " + (ok? "text-green-600" : "text-neutral-500"); };
-lettersInput.oninput = ()=>{ const ok = norm(lettersInput.value)===norm(item().text||""); lettersCheck.textContent = ok? "Perfect match!" : "Pro tip: try short phrases."; lettersCheck.className = "text-sm " + (ok? "text-green-600" : "text-neutral-500"); };
-
-/* add custom verse */
-addBtn.onclick = ()=>{
-  const ref = refIn.value.trim(), text = textIn.value.trim();
-  if (!ref || !text) return;
-  let pack = state.packs.find(p=>p.id==="my-verses");
-  if (!pack){ pack = {id:"my-verses", name:"My Verses", verses:[]}; state.packs.unshift(pack); }
-  pack.verses.unshift({ref, text});
-  state.activePackId = "my-verses"; state.activeIdx = 0;
-  refIn.value=""; textIn.value="";
-  save(state); renderAll();
+/* inputs */
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
+const check=(el,ok,off)=>{ el.textContent=ok? "Perfect match!" : off; el.className="text-sm "+(ok?"text-green-600":"text-neutral-500 dark:text-neutral-400"); };
+fillInput.oninput=()=>check(fillHint, norm(fillInput.value)===norm(item().text||""), "Punctuation doesn’t matter.");
+lettersInput.oninput=()=>check(lettersCheck, norm(lettersInput.value)===norm(item().text||""), "Pro tip: try short phrases.");
+document.getElementById('addBtn').onclick=()=>{const ref=refIn.value.trim(), txt=textIn.value.trim(); if(!ref||!txt) return;
+  let pack=state.packs.find(p=>p.id==="my-verses"); if(!pack){pack={id:"my-verses", name:"My Verses", verses:[]}; state.packs.unshift(pack);}
+  pack.verses.unshift({ref:ref, text:txt}); state.activePackId="my-verses"; state.activeIdx=0; refIn.value=""; textIn.value=""; save(state); renderAll();
 };
 </script>
 </body>
